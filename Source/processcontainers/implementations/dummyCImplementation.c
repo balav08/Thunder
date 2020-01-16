@@ -124,7 +124,9 @@ ContainerError process_container_cpu_usage(struct ProcessContainer* container, i
 ContainerError process_container_pid(struct ProcessContainer* container, uint32_t* pid) 
 {
     // Dumm random pid
-    pid = (*((uint32_t*)container)) % 100 + 10;
+    pid = 44;
+
+    return ERROR_NONE;
 }
 
 

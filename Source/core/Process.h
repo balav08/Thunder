@@ -386,19 +386,9 @@ namespace Core {
             return (static_cast<uint16_t>(read(_stderr, data, length)));
         }
 #endif
-        uint32_t Launch(const Process::Options& parameters, uint32_t* pid)
+        uint32_t LaunchProcess(const char* program, uint32_t* pid)
         {
-            uint32_t error = Core::ERROR_NONE;
-
-            if (IsActive() == false) {
-                if (_parameters != nullptr) {
-                    // Destruct what we got, we sare starting again!!!
-                    ::free(_parameters);
-                }
-
-                // If we are "relaunched" make sure we reset the _exitCode.
-                _exitCode = static_cast<uint32_t>(~0);
-
+            uint32_t error;
 #ifdef __WIN32__
                 STARTUPINFO si;
                 ZeroMemory(&si, sizeof(si));
@@ -442,12 +432,8 @@ namespace Core {
                     }
                 }
 
-                uint16_t size = parameters.LineSize();
-                _parameters = ::malloc(size);
-                _argc = parameters.Line(_parameters, size);
-
                 if (CreateProcess(
-                        parameters.Command().c_str(),
+                        program,
                         reinterpret_cast<char*>(_parameters),
                         nullptr,
                         nullptr,
@@ -483,9 +469,6 @@ namespace Core {
 #endif
 
 #ifdef __LINUX__
-                uint16_t size = parameters.BlockSize();
-                _parameters = ::malloc(size);
-                _argc = parameters.Block(_parameters, size);
                 int stdinfd[2], stdoutfd[2], stderrfd[2];
 
                 stdinfd[0] = -1;
@@ -570,6 +553,89 @@ namespace Core {
                     }
                 }
 #endif
+            return error;
+        }
+
+        uint32_t Launch(const Process::Options& parameters, uint32_t* pid)
+        {
+            uint32_t error = Core::ERROR_NONE;
+
+            if (IsActive() == false) {
+                if (_parameters != nullptr) {
+                    // Destruct what we got, we sare starting again!!!
+                    ::free(_parameters);
+                }
+
+                // If we are "relaunched" make sure we reset the _exitCode.
+                _exitCode = static_cast<uint32_t>(~0);
+
+                // Generate parameters list
+#ifdef __WIN32__
+                uint16_t size = parameters.LineSize();
+                _parameters = ::malloc(size);
+                _argc = parameters.Line(_parameters, size);
+#endif // __WIN32__
+#ifdef __LINUX__
+                uint16_t size = parameters.BlockSize();
+                _parameters = ::malloc(size);
+                _argc = parameters.Block(_parameters, size);
+#endif // __LINUX__
+
+                error = LaunchProcess(parameters.Command().c_str(), pid);
+
+            }
+
+            return (error);
+        }
+
+        uint32_t Launch(const char* path, const std::vector<string>& arguments, uint32_t* pid)
+        {
+            uint32_t error = Core::ERROR_NONE;
+
+            if (IsActive() == false) {
+                if (_parameters != nullptr) {
+                    // Destruct what we got, we sare starting again!!!
+                    ::free(_parameters);
+                }
+
+                // If we are "relaunched" make sure we reset the _exitCode.
+                _exitCode = static_cast<uint32_t>(~0);
+
+
+                _argc = static_cast<uint16_t>(arguments.size() + 1);
+
+                // find memory needed to host argv + its contents
+                // Memory for pointers
+                size_t size = (_argc + 1) * sizeof(char*); // +1 comes from nullptr at the end
+
+                // Add size of actual data
+                for (auto& arg : arguments) {
+                    size += arg.length() + 1;
+                }
+                size += strlen(path) + 1; // acount for argv[0] which is executable name
+
+                _parameters = ::malloc(size);
+
+                // Get pointers to argv pointer table and actual data
+                char** argv = reinterpret_cast<char**>(_parameters);
+                char* argumentsData = reinterpret_cast<char*>((uint8_t*)_parameters + (_argc + 1) * sizeof(char*));
+
+                size_t dataOffset = 0;
+                // fist set program name
+                argv[0] = &(argumentsData[dataOffset]);
+                strcpy(argv[0], path);
+                dataOffset += strlen(path) + 1;
+
+                // fill rest of argv
+                for (unsigned int i = 1; i <= arguments.size(); i++) {
+                    argv[i] = &(argumentsData[dataOffset]);
+                    strcpy(argv[i], arguments[i-1].c_str());
+                    dataOffset += arguments[i-1].length() + 1;
+                }
+                // add nullptr as last argv
+                argv[arguments.size() + 1] = nullptr;
+
+                error = LaunchProcess(argv[0], pid);
             }
 
             return (error);

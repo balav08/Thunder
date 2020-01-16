@@ -1,13 +1,12 @@
-#include "processcontainers/process_containers.h"
 #include "processcontainers/ProcessContainer.h"
 
 namespace WPEFramework {
 namespace ProcessContainers {
-    class CContainer : public IContainer 
+    class RunCContainer : public IContainer 
     {
     public:
-        CContainer(ProcessContainer* container);
-        virtual ~CContainer();
+        RunCContainer(string name, string path);
+        virtual ~RunCContainer();
 
         // IContainerMethods
         const string Id() const override;
@@ -24,31 +23,23 @@ namespace ProcessContainers {
         uint32_t Release() override;
 
     private:
-        ProcessContainer* _container;
         mutable uint32_t _refCount;
-        std::vector<string> _networkInterfaces;
+        string _name;
+        string _path;
+        mutable Core::OptionalType<uint32_t> _pid;
     };
 
-    class CContainerAdministrator : public IContainerAdministrator 
+    class RunCContainerAdministrator : public IContainerAdministrator 
     {
-        friend class CContainer;
+        friend class RunCContainer;
     public:
         IContainer* Container(const string& id, 
                                 IStringIterator& searchpaths, 
                                 const string& logpath,
                                 const string& configuration) override; //searchpaths will be searched in order in which they are iterated
 
-        CContainerAdministrator() 
-        {
-            // make sure framework is initialized
-            ContainerError error = process_container_initialize();
-
-            if (error != ContainerError::ERROR_NONE) {
-                TRACE_L1("Failed to initialize container api. Error code %d", error);
-            } else {
-                _refCount = 1;
-            }
-        }
+        RunCContainerAdministrator();
+        ~RunCContainerAdministrator();
 
         // IContainerAdministrator methods
         void Logging(const string& logDir, const string& loggingOptions) override;
