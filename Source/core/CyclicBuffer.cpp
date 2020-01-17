@@ -87,6 +87,7 @@ namespace Core {
     uint32_t CyclicBuffer::SignalLock(const uint32_t waitTime)
     {
 
+        AdminLock();
         uint32_t result = waitTime;
 
         if (waitTime != Core::infinite) {
@@ -129,6 +130,7 @@ namespace Core {
             ::WaitForSingleObjectEx(_signal, INFINITE, FALSE);
 #endif
         }
+        AdminUnlock();
         return (result);
     }
 
@@ -143,7 +145,13 @@ namespace Core {
     /* virtual */ void CyclicBuffer::DataAvailable()
     {
     }
-
+    void CyclicBuffer::Waiting()
+    {
+        // Wait till all waiters have seen the trigger..
+        while (_administration->_agents.load() > 0) {
+            SleepMs(0);
+        }
+    }
     void CyclicBuffer::Reevaluate()
     {
 
@@ -157,11 +165,6 @@ namespace Core {
 #else
             ReleaseSemaphore(_signal, _administration->_agents.load(), nullptr);
 #endif
-
-            // Wait till all waiters have seen the trigger..
-            while (_administration->_agents.load() > 0) {
-                SleepMs(0);
-            }
         }
     }
 
@@ -176,6 +179,7 @@ namespace Core {
         Reevaluate();
 
         AdminUnlock();
+        Waiting();
     }
 
     uint32_t CyclicBuffer::Read(uint8_t buffer[], const uint32_t length)
@@ -304,6 +308,7 @@ namespace Core {
                 DataAvailable();
 
                 AdminUnlock();
+                Waiting();
             }
         }
 
@@ -439,7 +444,7 @@ namespace Core {
         }
 
         AdminUnlock();
-
+        Waiting();
         return (result);
     }
 
