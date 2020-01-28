@@ -89,7 +89,8 @@ namespace Core {
         {
             __Deinitialize<CONTEXT>();
 
-            ASSERT(m_RefCount == 0);
+
+            /* ASSERT(m_RefCount == 0); */
 
             TRACE_L5("Destructor ProxyObject <%p>", (this));
         }
