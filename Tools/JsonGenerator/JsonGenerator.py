@@ -959,7 +959,7 @@ def SortByDependency(objects):
     for obj in sorted(objects, key=lambda x: x.CppClass(), reverse=False):
         found = filter(lambda sortedObj: obj.CppClass() in map(
             lambda x: x.CppClass(), sortedObj.Objects()), sortedObjects)
-        if found:
+        try:
             index = min(map(lambda x: sortedObjects.index(x), found))
             movelist = filter(lambda x: x.CppClass() in map(
                 lambda x: x.CppClass(), sortedObjects), obj.Objects())
@@ -968,7 +968,7 @@ def SortByDependency(objects):
                 if m in sortedObjects:
                     sortedObjects.insert(
                         index, sortedObjects.pop(sortedObjects.index(m)))
-        else:
+        except ValueError:
             sortedObjects.append(obj)
     return sortedObjects
 
@@ -1613,7 +1613,7 @@ def EmitHelperCode(root, emit, header_file):
                     emit.Line("}")
                     emit.Line()
                 print(
-                    f"Emitting property '{method.JsonName()}'{'(write-only)' if method.writeonly else ('(read-only)' if method.readonly else '')}")
+                    f"Emitting property '{method.JsonName()}'{' (write-only)' if method.writeonly else (' (read-only)' if method.readonly else '')}")
                 if not method.writeonly:
                     EmitPropertyFc(method, method.GetMethodName(), True)
                 if not method.readonly:
@@ -1989,7 +1989,7 @@ def CreateDocument(schema, path):
                     if "required" not in obj and name and len(obj["properties"]) > 1:
                         trace.Warn(
                             'No "required" field for object "%s"' % name)
-                    for pname, props in obj["properties"].iteritems():
+                    for pname, props in obj["properties"].items():
                         __TableObj(pname, props, parentName +
                                    "/" + name, obj, prefix, False)
                 elif obj["type"] == "array":
@@ -2010,7 +2010,7 @@ def CreateDocument(schema, path):
 
         def PlainTable(obj, columns, ref="ref"):
             MdTableHeader(columns)
-            for prop, val in sorted(obj.iteritems()):
+            for prop, val in sorted(obj.items()):
                 MdRow(["<a name=\"%s.%s\">%s</a>" % (ref, (prop.split("]", 1)
                                                            [0][1:]) if "]" in prop else prop, prop), val])
             MdBr()
@@ -2033,7 +2033,7 @@ def CreateDocument(schema, path):
                 jsonData += str(default if default else (
                     '[ %s ]' % (__ExampleObj("", obj["items"]))))
             elif objType == "object":
-                jsonData += "{ %s }" % ", ".join(map(lambda p: __ExampleObj(p, obj["properties"][p]), obj["properties"])[
+                jsonData += "{ %s }" % ", ".join(list(map(lambda p: __ExampleObj(p, obj["properties"][p]), obj["properties"]))[
                                                  0:obj["maxProperties"] if "maxProperties" in obj else None])
             return jsonData
 
@@ -2227,7 +2227,7 @@ def CreateDocument(schema, path):
         MdBr()
 
         def mergedict(d1, d2, prop):
-            return dict((d1[prop] if prop in d1 else dict()).items() + (d2[prop] if prop in d2 else dict()).items())
+            return { **(d1[prop] if prop in d1 else dict()), **(d2[prop] if prop in d2 else dict())}
 
         MdHeader("Introduction")
         MdHeader("Scope", 2)
@@ -2327,7 +2327,7 @@ def CreateDocument(schema, path):
             def InterfaceDump(interface, section, header):
                 head = False
                 if section in interface:
-                    for method, contents in interface[section].iteritems():
+                    for method, contents in interface[section].items():
                         if contents and method not in skip_list:
                             if not head:
                                 MdParagraph("%s interface %s:" % (
@@ -2376,7 +2376,7 @@ def CreateDocument(schema, path):
             skip_list = []
 
             if section in interface:
-                for method, props in interface[section].iteritems():
+                for method, props in interface[section].items():
                     if props:
                         MethodDump(method, props, plugin_class, event, prop)
                     skip_list.append(method)
