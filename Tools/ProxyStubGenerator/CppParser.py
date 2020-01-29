@@ -478,7 +478,7 @@ class Enumerator(Type, Identifier):
         Identifier.__init__(self, parent_enum, self.name)
         self.parent = parent_block
         self.value = parent_block.GetValue() if value == None else Evaluate(value)
-        if isinstance(self.value, (int, long)):
+        if isinstance(self.value, (int)):
             self.parent.SetValue(self.value)
         self.parent.items.append(self)
     def __str__(self):
