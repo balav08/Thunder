@@ -10,7 +10,9 @@ import urllib
 import glob
 from collections import OrderedDict
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.sep + "..")
+
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
+
 import ProxyStubGenerator.CppParser
 import ProxyStubGenerator.Interface
 
@@ -273,7 +275,7 @@ class JsonEnum(JsonType):
             return classname
 
     def CppEnumerators(self):
-        return map(lambda x: ("E" if x[0].isdigit() else "") + x.upper(), self.enumerators)
+        return list(map(lambda x: ("E" if x[0].isdigit() else "") + x.upper(), self.enumerators))
 
     def CppEnumeratorValues(self):
         return self.values
@@ -317,7 +319,7 @@ class JsonObject(JsonType):
                 self.origRef = obj
                 if obj.parent != parent:
                     obj.AddRef(self)
-            for prop_name, prop in schema["properties"].iteritems():
+            for prop_name, prop in schema["properties"].items():
                 newObject = JsonItem(prop_name, self, prop, included=included)
                 self.properties.append(newObject)
                 # Handle aggregate objects
@@ -559,7 +561,7 @@ class JsonRpcSchema(JsonType):
 
         def __AddMethods(section, schema, ctor):
             if section in schema:
-                for name, method in schema[section].iteritems():
+                for name, method in schema[section].items():
                     if name in method_list:
                         del self.methods[method_list.index(name)]
                         method_list.remove(name)
@@ -920,7 +922,7 @@ def LoadInterface(file):
             schema["events"] = events
 
         if DUMP_JSON:
-            print(f"\n// JSON interface for {face.obj.name} -----------") 
+            print(f"\n// JSON interface for {face.obj.name} -----------")
             print(json.dumps(schema, indent=2))
             print("// ----------------\n")
         return schema
@@ -987,7 +989,7 @@ class ObjectTracker:
     def Add(self, newObj):
         def __Compare(lhs, rhs):
             # NOTE: Two objects are considered identical if they have the same property names and types only!
-            for name, prop in lhs.iteritems():
+            for name, prop in lhs.items():
                 if name not in rhs:
                     return False
                 elif rhs[name]["type"] != prop["type"]:
@@ -998,7 +1000,7 @@ class ObjectTracker:
                             return False
                     else:
                         return False
-            for name, prop in rhs.iteritems():
+            for name, prop in rhs.items():
                 if name not in lhs:
                     return False
                 elif lhs[name]["type"] != prop["type"]:
@@ -1534,7 +1536,7 @@ def EmitHelperCode(root, emit, header_file):
         emit.Line()
         for method in root.Properties():
             if not isinstance(method, JsonNotification) and not isinstance(method, JsonProperty):
-                print(f"Emitting method '{method.JsonName()}'") 
+                print(f"Emitting method '{method.JsonName()}'")
                 params = method.Properties()[0].CppType()
                 if method.Summary():
                     emit.Line("// Method: %s - %s" %
@@ -1610,7 +1612,8 @@ def EmitHelperCode(root, emit, header_file):
                     emit.Unindent()
                     emit.Line("}")
                     emit.Line()
-                print(f"Emitting property '{method.JsonName()}'{'(write-only)' if method.writeonly else ('(read-only)' if method.readonly else '')}")
+                print(
+                    f"Emitting property '{method.JsonName()}'{'(write-only)' if method.writeonly else ('(read-only)' if method.readonly else '')}")
                 if not method.writeonly:
                     EmitPropertyFc(method, method.GetMethodName(), True)
                 if not method.readonly:
@@ -1639,7 +1642,7 @@ def EmitObjects(root, emit, emitCommon=False):
     def EmitEnum(enum):
         global emittedItems
         emittedItems += 1
-        print(f"Emitting enum {enum.CppClass()}") 
+        print(f"Emitting enum {enum.CppClass()}")
         root = enum.parent.parent
         while root.parent:
             root = root.parent
@@ -1692,7 +1695,8 @@ def EmitObjects(root, emit, emitCommon=False):
         if jsonObj.IsDuplicate() or (not allowDup and jsonObj.RefCount() > 1):
             return
         if not isinstance(jsonObj, (JsonRpcSchema, JsonMethod)):
-            print(f"Emitting class '{jsonObj.CppClass()}' (source: '{jsonObj.OrigName()}')")
+            print(
+                f"Emitting class '{jsonObj.CppClass()}' (source: '{jsonObj.OrigName()}')")
             emit.Line("class %s : public %s {" % (
                 jsonObj.CppClass(), TypePrefix("Container")))
             emit.Line("public:")
@@ -2511,6 +2515,7 @@ if __name__ == "__main__":
                 trace.Error(str(err))
             except ValueError as err:
                 trace.Error(str(err))
-        print(f"\nJsonGenerator: All done. {trace.errors if trace.errors else 'No'} error{'' if trace.errors == 1 else 's'}.")
+        print(
+            f"\nJsonGenerator: All done. {trace.errors if trace.errors else 'No'} error{'' if trace.errors == 1 else 's'}.")
         if trace.errors:
             sys.exit(1)
