@@ -24,20 +24,20 @@ class Trace:
         self.errors = 0
 
     def __Print(self, text):
-        print text
+        print(text)
 
     def Header(self, text):
         self.__Print(text)
 
     def Warn(self, text):
-        self.__Print("Warning: " + text)
+        self.__Print(f"Warning: {text}")
 
     def Error(self, text):
         self.errors += 1
-        self.__Print("Error: " + text)
+        self.__Print(f"Error: {text}")
 
     def Success(self, text):
-        self.__Print("Success: " + text)
+        self.__Print(f"Success: {text}")
 
 
 trace = Trace()
@@ -46,7 +46,7 @@ try:
     import jsonref
 except:
     trace.Error("Install jsonref first")
-    print "e.g. try 'pip install jsonref'"
+    print("e.g. try 'pip install jsonref'")
     sys.exit(1)
 
 INDENT_SIZE = 4
@@ -920,9 +920,9 @@ def LoadInterface(file):
             schema["events"] = events
 
         if DUMP_JSON:
-            print "\n// JSON interface for %s -----------" % face.obj.name
-            print json.dumps(schema, indent=2)
-            print "// ----------------\n"
+            print(f"\n// JSON interface for {face.obj.name} -----------") 
+            print(json.dumps(schema, indent=2))
+            print("// ----------------\n")
         return schema
 
     schemas = []
@@ -1402,7 +1402,7 @@ def EmitHelperCode(root, emit, header_file):
                 has_statuslistener = True
                 break
 
-        print "Emitting registration code..."
+        print("Emitting registration code...")
         emit.Line("/*")
         emit.Indent()
         emit.Line("// Copy the code below to %s class definition" %
@@ -1528,13 +1528,13 @@ def EmitHelperCode(root, emit, header_file):
         emit.Line()
 
         # Method/property/event stubs
-        print "Emitting stubs..."
+        print("Emitting stubs...")
         emit.Line("// API implementation")
         emit.Line("//")
         emit.Line()
         for method in root.Properties():
             if not isinstance(method, JsonNotification) and not isinstance(method, JsonProperty):
-                print "Emitting method '%s'" % method.JsonName()
+                print(f"Emitting method '{method.JsonName()}'") 
                 params = method.Properties()[0].CppType()
                 if method.Summary():
                     emit.Line("// Method: %s - %s" %
@@ -1610,7 +1610,7 @@ def EmitHelperCode(root, emit, header_file):
                     emit.Unindent()
                     emit.Line("}")
                     emit.Line()
-                print "Emitting property '%s'%s" % (method.JsonName(), " (write-only)" if method.writeonly else " (read-only)" if method.readonly else "")
+                print(f"Emitting property '{method.JsonName()}'{"(write-only)" if method.writeonly else " (read-only)" if method.readonly else ""})
                 if not method.writeonly:
                     EmitPropertyFc(method, method.GetMethodName(), True)
                 if not method.readonly:
@@ -1618,7 +1618,7 @@ def EmitHelperCode(root, emit, header_file):
 
         for method in root.Properties():
             if isinstance(method, JsonNotification):
-                print "Emitting notification '%s'" % method.JsonName()
+                print(f"Emitting notification '{method.JsonName()}'"
                 EmitEvent(emit, root, method)
 
         emit.Unindent()
@@ -1639,7 +1639,7 @@ def EmitObjects(root, emit, emitCommon=False):
     def EmitEnum(enum):
         global emittedItems
         emittedItems += 1
-        print "Emitting enum %s" % enum.CppClass()
+        print(f"Emitting enum {enum.CppClass()}") 
         root = enum.parent.parent
         while root.parent:
             root = root.parent
@@ -1692,7 +1692,7 @@ def EmitObjects(root, emit, emitCommon=False):
         if jsonObj.IsDuplicate() or (not allowDup and jsonObj.RefCount() > 1):
             return
         if not isinstance(jsonObj, (JsonRpcSchema, JsonMethod)):
-            print "Emitting class '%s' (source: '%s')" % (jsonObj.CppClass(), jsonObj.OrigName())
+            print(f"Emitting class '{jsonObj.CppClass()}' (source: '{jsonObj.OrigName()}')")
             emit.Line("class %s : public %s {" % (
                 jsonObj.CppClass(), TypePrefix("Container")))
             emit.Line("public:")
@@ -1782,7 +1782,7 @@ def EmitObjects(root, emit, emitCommon=False):
     emit.Indent()
     emit.Line()
     if emitCommon and enumTracker.CommonObjects():
-        print "Emitting common enums..."
+        print("Emitting common enums...")
         emit.Line("// Common enums")
         emit.Line("//")
         emit.Line()
@@ -1790,7 +1790,7 @@ def EmitObjects(root, emit, emitCommon=False):
             if not obj.IsDuplicate() and not obj.included_from:
                 EmitEnum(obj)
     if emitCommon and objTracker.CommonObjects():
-        print "Emitting common classes..."
+        print("Emitting common classes...")
         emit.Line("// Common classes")
         emit.Line("//")
         emit.Line()
@@ -1798,7 +1798,7 @@ def EmitObjects(root, emit, emitCommon=False):
             if not obj.included_from:
                 EmitClass(obj, True)
     if root.Objects():
-        print "Emitting params/result classes..."
+        print("Emitting params/result classes...")
         emit.Line("// Method params/result classes")
         emit.Line("//")
         emit.Line()
@@ -2466,7 +2466,7 @@ if __name__ == "__main__":
     generateStubs = args.stubs
 
     if args.version:
-        print "Version: %s" % VERSION
+        print(f"Version: {VERSION}")
         sys.exit(1)
     elif not args.path or (not generateCode and not generateRpc and not generateStubs and not generateDocs):
         argparser.print_help()
@@ -2511,6 +2511,6 @@ if __name__ == "__main__":
                 trace.Error(str(err))
             except ValueError as err:
                 trace.Error(str(err))
-        print "\nJsonGenerator: All done. %s error%s." % (trace.errors if trace.errors else "No", "" if trace.errors == 1 else "s")
+        print(f"\nJsonGenerator: All done. {trace.errors if trace.errors else "No"} error{"" if trace.errors == 1 else "s"}.")
         if trace.errors:
             sys.exit(1)
