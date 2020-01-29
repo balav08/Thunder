@@ -660,7 +660,7 @@ def LoadSchema(file, include_path, cpp_include_path):
                 if not os.path.isfile(ref_tok[0]):
                     raise RuntimeError("$ref file '%s' not found" % ref_tok[0])
                 ref_file = '"file:%s#%s"' % (
-                    urllib.pathname2url(ref_tok[0]), ref_tok[1])
+                    urllib.request.pathname2url(ref_tok[0]), ref_tok[1])
                 tokens[c + 2] = ref_file
             elif t == '"$cppref"' and tokens[c + 1] == ":" and tokens[c + 2][:2] != '"#':
                 ref_file = tokens[c + 2].strip('"')
@@ -1610,7 +1610,7 @@ def EmitHelperCode(root, emit, header_file):
                     emit.Unindent()
                     emit.Line("}")
                     emit.Line()
-                print(f"Emitting property '{method.JsonName()}'{"(write-only)" if method.writeonly else " (read-only)" if method.readonly else ""})
+                print(f"Emitting property '{method.JsonName()}'{'(write-only)' if method.writeonly else ('(read-only)' if method.readonly else '')}")
                 if not method.writeonly:
                     EmitPropertyFc(method, method.GetMethodName(), True)
                 if not method.readonly:
@@ -1618,7 +1618,7 @@ def EmitHelperCode(root, emit, header_file):
 
         for method in root.Properties():
             if isinstance(method, JsonNotification):
-                print(f"Emitting notification '{method.JsonName()}'"
+                print(f"Emitting notification '{method.JsonName()}'")
                 EmitEvent(emit, root, method)
 
         emit.Unindent()
@@ -2171,7 +2171,7 @@ def CreateDocument(schema, path):
         if "events" in interface:
             event_count = len(interface["events"])
         if "include" in interface:
-            for name, iface in interface["include"].iteritems():
+            for _, iface in interface["include"].iteritems():
                 if "methods" in iface:
                     method_count += len(iface["methods"])
                 if "properties" in iface:
@@ -2359,7 +2359,7 @@ def CreateDocument(schema, path):
                 section, plugin_class))
             InterfaceDump(interface, section, header)
             if "include" in interface:
-                for name, s in interface["include"].iteritems():
+                for _, s in interface["include"].iteritems():
                     if s:
                         if section in s:
                             MdBr()
@@ -2378,7 +2378,7 @@ def CreateDocument(schema, path):
                     skip_list.append(method)
 
             if "include" in interface:
-                for name, s in interface["include"].iteritems():
+                for _, s in interface["include"].iteritems():
                     if s:
                         cl = s["info"]["class"]
                         if section in s:
@@ -2511,6 +2511,6 @@ if __name__ == "__main__":
                 trace.Error(str(err))
             except ValueError as err:
                 trace.Error(str(err))
-        print(f"\nJsonGenerator: All done. {trace.errors if trace.errors else "No"} error{"" if trace.errors == 1 else "s"}.")
+        print(f"\nJsonGenerator: All done. {trace.errors if trace.errors else 'No'} error{'' if trace.errors == 1 else 's'}.")
         if trace.errors:
             sys.exit(1)
