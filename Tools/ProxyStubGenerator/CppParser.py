@@ -438,7 +438,7 @@ class Variable(Type, Identifier):
     def __repr__(self):
         return str(self)
 
-class Parameter(Type, Variable):
+class Parameter(Variable, Type):
     def __init__(self, parent_block, string, value = [], valid_specifiers = []):
         Variable.__init__(self, parent_block, string, value, valid_specifiers)
         if self.name in parent_block.param:
@@ -1070,22 +1070,22 @@ def DumpTree(tree, ind = 0):
     indent = ind*" "
 
     if isinstance(tree, (Namespace, Class)):
-        print indent + str(tree)
+        print(indent + str(tree))
 
         for td in tree.typedefs:
-            print indent + 2*" " + str(td)
+            print(indent + 2*" " + str(td))
 
         for e in tree.enums:
-            print indent + 2*" " + str(e)
+            print(indent + 2*" " + str(e))
             for item in e.items:
-                print indent + 4*" " + str(item)
+                print(indent + 4*" " + str(item))
 
     for v in tree.vars:
-        print indent + 2*" " + str(v)
+        print(indent + 2*" " + str(v))
 
     if isinstance(tree, (Namespace, Class)):
         for m in tree.methods:
-           print indent + 2*" " + str(m)
+           print(indent + 2*" " + str(m))
 
     if isinstance(tree, (Namespace, Class)):
         for c in tree.classes:
@@ -1103,4 +1103,4 @@ if __name__ == "__main__":
     if isinstance(tree, Namespace):
          DumpTree(tree)
     else:
-        print tree
+        print(tree)
