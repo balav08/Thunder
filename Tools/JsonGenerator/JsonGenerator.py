@@ -394,7 +394,9 @@ class JsonObject(JsonType):
 
     def NeedsCopyCtor(self):
         # Check if a copy constructory is needed by scanning all duplicate classes
-        return ALWAYS_COPYCTOR or self.parent.NeedsCopyCtor() or filter(lambda obj: obj.parent.NeedsCopyCtor() if self != obj else False, self.refs)
+        filteredClasses = filter(lambda obj: obj.parent.NeedsCopyCtor() if self != obj else False, self.refs)
+        foundInDuplicate = next(filteredClasses, None)
+        return ALWAYS_COPYCTOR or self.parent.NeedsCopyCtor() or foundInDuplicate is not None
 
     def AddRef(self, obj):
         self.refs.append(obj)
@@ -557,7 +559,7 @@ class JsonRpcSchema(JsonType):
                             name, self, method, include)
                         self.methods.append(newMethod)
 
-        method_list = map(lambda x: x.name, self.methods)
+        method_list = list(map(lambda x: x.name, self.methods))
 
         def __AddMethods(section, schema, ctor):
             if section in schema:
