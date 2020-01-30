@@ -62,6 +62,9 @@ namespace Core {
                 _job->Dispatch();
                 _job.Release();
             }
+            inline uint64_t Id() {
+                return reinterpret_cast<uint64_t>(_job.operator->());
+            }
 
         private:
             Core::ProxyType<Core::IDispatch> _job;
@@ -111,6 +114,53 @@ namespace Core {
         };
 
     protected:
+        class WorkerStatus {
+        private:
+            WorkerStatus(const WorkerStatus&) = delete;
+            WorkerStatus& operator=(const WorkerStatus&) = delete;
+
+        public:
+            WorkerStatus() 
+                : _jobRunning(true, true)
+                , _adminLock()
+                , _jobID()
+            {
+            }
+            void JobStarted(uint64_t jobID)
+            {
+                _adminLock.Lock();   
+
+                _jobRunning.ResetEvent();       
+                _jobID = jobID;
+
+                _adminLock.Unlock();
+            }
+            void JobFinished()
+            {
+                _jobID = 0;
+                _jobRunning.SetEvent();
+            }
+            uint32_t WaitForJobDone(uint64_t jobID, uint32_t waitTimeMs)
+            {
+                uint32_t result = Core::ERROR_NONE;
+
+                _adminLock.Lock();
+
+                if (_jobID == jobID) {
+                    result = _jobRunning.Lock(waitTimeMs);
+                } else {
+                    result = Core::ERROR_UNKNOWN_KEY;
+                }
+
+                _adminLock.Unlock();
+
+                return result;
+            }
+        protected:
+            Core::Event _jobRunning;
+            Core::CriticalSection _adminLock;
+            uint64_t _jobID;
+        };
         class Minion : public Core::Thread {
         private:
             Minion(const Minion&) = delete;
@@ -141,7 +191,6 @@ namespace Core {
                 _parent = &parent;
                 _index = index;
             }
-
         private:
             virtual uint32_t Worker() override
             {
@@ -187,7 +236,19 @@ namespace Core {
         inline uint32_t Revoke(const Core::ProxyType<Core::IDispatch>& job, const uint32_t waitTime = Core::infinite)
         {
             Job compare(job);
-            return (_timer.Revoke(compare) == true || _handleQueue.Remove(compare) ? Core::ERROR_NONE : Core::ERROR_UNAVAILABLE);
+            
+            // Check if job is sheduled or run by timer
+            uint32_t result = (_timer.Revoke(compare) == true || _handleQueue.Remove(compare) ? Core::ERROR_NONE : Core::ERROR_UNAVAILABLE);
+
+            // Check if the job is run by any of the minions
+            for (int i = 1; i < _metadata.Slots; ++i) {
+                if (_workerStatuses[i].WaitForJobDone(compare.Id(), waitTime) == Core::ERROR_NONE) {
+                    // Job was found running
+                    result = Core::ERROR_NONE;
+                }
+            }
+
+            return result;
         }
         inline const WorkerPool::Metadata& Snapshot()
         {
@@ -195,9 +256,10 @@ namespace Core {
             _metadata.Pending = _handleQueue.Length();
             return (_metadata);
         }
-	void Join() {
+        void Join() 
+        {
             Process(0);
-	}
+        }
         void Run()
         {
             _handleQueue.Enable();
@@ -244,6 +306,7 @@ namespace Core {
             Job newRequest;
 
             while ((Running() == true) && (_handleQueue.Extract(newRequest, Core::infinite) == true)) {
+                _workerStatuses[index].JobStarted(newRequest.Id());
 
                 _metadata.Slot[index]++;
 
@@ -252,6 +315,8 @@ namespace Core {
                 newRequest.Dispatch();
 
                 _occupation--;
+
+                _workerStatuses[index].JobFinished();
             }
         }
 
@@ -260,6 +325,7 @@ namespace Core {
         std::atomic<uint8_t> _occupation;
         Core::TimerType<Job> _timer;
         Metadata _metadata;
+        WorkerStatus* _workerStatuses;
         static WorkerPool* _instance;
     };
 

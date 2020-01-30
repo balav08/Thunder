@@ -248,7 +248,7 @@ namespace RPC {
         {
             return (_factory.Element());
         }
-        void Clear()
+        void Dispose()
         {
             _message.Release();
             _channel.Release();

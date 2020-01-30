@@ -16,12 +16,16 @@ namespace WPEFramework {
 			_metadata.Slots = threadCount;
 			_metadata.Slot = counters;
 			_instance = this;
+
+			_workerStatuses = new WorkerStatus[threadCount];
 		}
 
 		WorkerPool ::~WorkerPool()
 		{
 			_handleQueue.Disable();
 			_instance = nullptr;
+
+			delete[] _workerStatuses;
 		}
 	}
 }

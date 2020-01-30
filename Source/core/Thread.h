@@ -444,7 +444,7 @@ namespace Core {
                     _executing.Dispatch();
 
                     // Clear it out, we processed it.
-                    _executing = RUNCONTEXT();
+                    _executing.Dispose();
 
                     _active = false;
                     _run++;
