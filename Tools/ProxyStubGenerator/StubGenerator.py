@@ -50,13 +50,13 @@ class Log:
         if BE_VERBOSE:
             self.infos.append("%s: INFO: %s%s%s" %
                               (NAME, file, ": " if file else "", text))
-            print self.infos[-1]
+            print(self.infos[-1])
 
     def Warn(self, text, file=""):
         if SHOW_WARNINGS:
             self.warnings.append("%s: WARNING: %s%s%s" %
                                  (NAME, file, ": " if file else "", text))
-            print self.warnings[-1]
+            print(self.warnings[-1])
 
     def Error(self, text, file=""):
         self.errors.append("%s: ERROR: %s%s%s" %
@@ -68,9 +68,9 @@ class Log:
 
     def Dump(self):
         if self.errors or self.warnings or self.infos:
-            print ""
+            print("")
             for item in self.errors + self.warnings + self.infos:
-                print item
+                print(item)
 
 
 log = Log()
@@ -163,11 +163,6 @@ def GenerateStubs(output_file, source_file, defaults="", scan_only=False):
     interfaces = FindInterfaceClasses(tree)
     if not interfaces:
         raise NoInterfaceError(source_file)
-
-    for iface in interfaces:
-        if iface.id < MIN_INTERFACE_ID:
-            log.Warn("invalid interface ID %s (%s) of %s - shall be at least 0x40" % (hex(iface.id)
-                                                                                      if isinstance(iface.id, (long, int)) else "?", str(iface.id), iface.obj.full_name), source_file)
 
     if scan_only:
         return interfaces
@@ -304,9 +299,9 @@ def GenerateStubs(output_file, source_file, defaults="", scan_only=False):
                     self.oclass = type_
                     self.unexpanded = type
                     self.type = self._ExpandTypedefs(type)
-                    self.is_ref, self.is_ptr, idx, idx2, self.type = _Typename(
+                    self.is_ref, self.is_ptr, idx, _, self.type = _Typename(
                         self.type, cv)
-                    is_ref, is_ptr, typename_idx, typename_idx2, self.unexpanded = _Typename(
+                    _, _, typename_idx, typename_idx2, self.unexpanded = _Typename(
                         self.unexpanded, cv)
                     self.is_nonconstref = self.is_ref and self.type[0] != "const"
                     self.is_nonconstptr = self.is_ptr and self.type[0] != "const"
@@ -1272,7 +1267,7 @@ def GenerateStubs(output_file, source_file, defaults="", scan_only=False):
         if announce_list:
             emit.Line()
 
-        for key, val in announce_list.iteritems():
+        for key, val in announce_list.items():
             emit.Line("typedef ProxyStub::UnknownStubType<%s, %s> %s;" %
                       (key, val[1], val[2]))
 
@@ -1285,7 +1280,7 @@ def GenerateStubs(output_file, source_file, defaults="", scan_only=False):
         emit.Line("{")
         emit.IndentInc()
 
-        for key, val in announce_list.iteritems():
+        for key, val in announce_list.items():
             emit.Line("RPC::Administrator::Instance().Announce<%s, %s, %s>();" % (
                 key, val[0], val[2]))
 
@@ -1350,24 +1345,25 @@ if __name__ == "__main__":
         INTERFACE_NAMESPACE = "::" + INTERFACE_NAMESPACE
 
     if args.help_tags:
-        print "The following special tags are supported:"
-        print "   @stubgen:skip     - skip parsing of the rest of the file"
-        print "   @stubgen:omit     - omit generating code for the next item (class or method)"
-        print "   @stubgen:stub     - generate empty stub for the next item (class or method)"
-        print "For non-const pointer and reference method/function parameters:"
-        print "   @in               - denotes an input parameter"
-        print "   @out              - denotes an output parameter"
-        print "   @inout            - denotes an input/output parameter (equivalent of @in @out)"
-        print "   @length:<expr>    - specifies a buffer length value (a constant, a parameter name or a math expression)"
-        print "   @maxlength:<expr> - specifies a maximum buffer length value (a constant, a parameter name or a math expression),"
-        print "                       if not specified @length is used as maximum length, use round parenthesis for expressions,"
-        print "                       e.g.: @length:bufferSize @length:(width*height*4)"
-        print ""
-        print "The tags shall be placed inside comments."
+        print("The following special tags are supported:")
+        print("   @stubgen:skip     - skip parsing of the rest of the file")
+        print("   @stubgen:omit     - omit generating code for the next item (class or method)")
+        print(
+            "   @stubgen:stub     - generate empty stub for the next item (class or method)")
+        print("For non-const pointer and reference method/function parameters:")
+        print("   @in               - denotes an input parameter")
+        print("   @out              - denotes an output parameter")
+        print("   @inout            - denotes an input/output parameter (equivalent of @in @out)")
+        print("   @length:<expr>    - specifies a buffer length value (a constant, a parameter name or a math expression)")
+        print("   @maxlength:<expr> - specifies a maximum buffer length value (a constant, a parameter name or a math expression),")
+        print("                       if not specified @length is used as maximum length, use round parenthesis for expressions,")
+        print("                       e.g.: @length:bufferSize @length:(width*height*4)")
+        print("")
+        print("The tags shall be placed inside comments.")
         sys.exit()
 
     if args.show_version:
-        print "Version: " + VERSION
+        print("Version: " + VERSION)
         sys.exit()
 
     if not args.path:
@@ -1400,7 +1396,7 @@ if __name__ == "__main__":
                     # dump interfaces if only scanning
                     for f in sorted(output, key=lambda x: x.id):
                         if scan_only:
-                            print f.id, f.obj.full_name
+                            print(f.id, f.obj.full_name)
 
                 except SkipFileError as err:
                     log.Print("skipped file '%s'" % err)
@@ -1416,24 +1412,25 @@ if __name__ == "__main__":
                     log.Error(err)
 
             if scan_only:
-                print "\nInterface dump:"
+                print("\nInterface dump:")
 
             sorted_faces = sorted(faces, key=lambda x: x.id)
             for i, f in enumerate(sorted_faces):
-                if isinstance(f.id, (long, int)):
+                if isinstance(f.id, int):
                     if scan_only:
                         if i and sorted_faces[i - 1].id < f.id - 1:
-                            print "..."
-                        print "%s (%s) - '%s'" % (hex(f.id) if isinstance(f.id, (int, long)) else "?", str(f.id), f.obj.full_name)
+                            print("...")
+                        print("%s (%s) - '%s'" % (hex(f.id) if isinstance(f.id,
+                                                                          int) else "?", str(f.id), f.obj.full_name))
                     if i and sorted_faces[i - 1].id == f.id:
                         log.Warn("duplicate interface ID %s (%s) of %s" % (hex(f.id) if isinstance(
-                            f.id, (int, long)) else "?", str(f.id), f.obj.full_name), f.file)
+                            f.id, int) else "?", str(f.id), f.obj.full_name), f.file)
                 else:
                     log.Info("can't evaluate interface ID \"%s\" of %s" %
                              (str(f.id), f.obj.full_name), f.file)
 
             if len(interface_files) > 1 and BE_VERBOSE:
-                print ""
+                print("")
 
             log.Print(("all done; %i file%s processed" % (len(interface_files) - len(skipped), "s" if len(interface_files) - len(skipped) > 1 else "")) +
                       ((" (%i file%s skipped)" % (len(skipped), "s" if len(skipped) > 1 else "")) if skipped else "") +
