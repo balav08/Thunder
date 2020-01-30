@@ -10,8 +10,8 @@ import urllib
 import glob
 from collections import OrderedDict
 
-
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
+sys.path.append(os.path.join(os.path.dirname(
+    os.path.abspath(__file__)), os.pardir))
 
 import ProxyStubGenerator.CppParser
 import ProxyStubGenerator.Interface
@@ -32,14 +32,14 @@ class Trace:
         self.__Print(text)
 
     def Warn(self, text):
-        self.__Print(f"Warning: {text}")
+        self.__Print("Warning: {}".format(text))
 
     def Error(self, text):
         self.errors += 1
-        self.__Print(f"Error: {text}")
+        self.__Print("Error: {}".format(text))
 
     def Success(self, text):
-        self.__Print(f"Success: {text}")
+        self.__Print("Success: {}".format(text))
 
 
 trace = Trace()
@@ -394,7 +394,8 @@ class JsonObject(JsonType):
 
     def NeedsCopyCtor(self):
         # Check if a copy constructory is needed by scanning all duplicate classes
-        filteredClasses = filter(lambda obj: obj.parent.NeedsCopyCtor() if self != obj else False, self.refs)
+        filteredClasses = filter(
+            lambda obj: obj.parent.NeedsCopyCtor() if self != obj else False, self.refs)
         foundInDuplicate = next(filteredClasses, None)
         return ALWAYS_COPYCTOR or self.parent.NeedsCopyCtor() or foundInDuplicate is not None
 
@@ -542,19 +543,19 @@ class JsonRpcSchema(JsonType):
         if "interface" in schema:
             schema = schema["interface"]
         if "include" in schema:
-            for name, s in schema["include"].iteritems():
+            for name, s in schema["include"].items():
                 include = s["info"]["class"]
                 self.includes.append(include)
                 if "methods" in s:
-                    for name, method in s["methods"].iteritems():
+                    for name, method in s["methods"].items():
                         newMethod = JsonMethod(name, self, method, include)
                         self.methods.append(newMethod)
                 if "properties" in s:
-                    for name, method in s["properties"].iteritems():
+                    for name, method in s["properties"].items():
                         newMethod = JsonProperty(name, self, method, include)
                         self.methods.append(newMethod)
                 if "events" in s:
-                    for name, method in s["events"].iteritems():
+                    for name, method in s["events"].items():
                         newMethod = JsonNotification(
                             name, self, method, include)
                         self.methods.append(newMethod)
@@ -802,7 +803,7 @@ def LoadInterface(file):
                 params["required"] = required
                 if prop:
                     if len(properties) == 1:
-                        return properties.values()[0]
+                        return list(properties.values())[0]
                     elif len(properties) > 1:
                         params["required"] = required
                         return params
@@ -827,7 +828,7 @@ def LoadInterface(file):
                         required.append(var_name)
                 params["properties"] = properties
                 if len(properties) == 1:
-                    return properties.values()[0]
+                    return list(properties.values())[0]
                 elif len(properties) > 1:
                     params["required"] = required
                     return params
@@ -924,7 +925,7 @@ def LoadInterface(file):
             schema["events"] = events
 
         if DUMP_JSON:
-            print(f"\n// JSON interface for {face.obj.name} -----------")
+            print("\n// JSON interface for {} -----------".format(face.obj.name))
             print(json.dumps(schema, indent=2))
             print("// ----------------\n")
         return schema
@@ -1538,7 +1539,7 @@ def EmitHelperCode(root, emit, header_file):
         emit.Line()
         for method in root.Properties():
             if not isinstance(method, JsonNotification) and not isinstance(method, JsonProperty):
-                print(f"Emitting method '{method.JsonName()}'")
+                print("Emitting method '{}'".format(method.JsonName()))
                 params = method.Properties()[0].CppType()
                 if method.Summary():
                     emit.Line("// Method: %s - %s" %
@@ -1614,8 +1615,10 @@ def EmitHelperCode(root, emit, header_file):
                     emit.Unindent()
                     emit.Line("}")
                     emit.Line()
-                print(
-                    f"Emitting property '{method.JsonName()}'{' (write-only)' if method.writeonly else (' (read-only)' if method.readonly else '')}")
+                propType = ' (write-only)' if method.writeonly else (
+                    ' (read-only)' if method.readonly else '')
+                print("Emitting property '{}' {}".format(
+                    method.JsonName(), propType))
                 if not method.writeonly:
                     EmitPropertyFc(method, method.GetMethodName(), True)
                 if not method.readonly:
@@ -1623,7 +1626,7 @@ def EmitHelperCode(root, emit, header_file):
 
         for method in root.Properties():
             if isinstance(method, JsonNotification):
-                print(f"Emitting notification '{method.JsonName()}'")
+                print("Emitting notification '{}'".format(method.JsonName()))
                 EmitEvent(emit, root, method)
 
         emit.Unindent()
@@ -1644,7 +1647,7 @@ def EmitObjects(root, emit, emitCommon=False):
     def EmitEnum(enum):
         global emittedItems
         emittedItems += 1
-        print(f"Emitting enum {enum.CppClass()}")
+        print("Emitting enum {}".format(enum.CppClass()))
         root = enum.parent.parent
         while root.parent:
             root = root.parent
@@ -1697,8 +1700,8 @@ def EmitObjects(root, emit, emitCommon=False):
         if jsonObj.IsDuplicate() or (not allowDup and jsonObj.RefCount() > 1):
             return
         if not isinstance(jsonObj, (JsonRpcSchema, JsonMethod)):
-            print(
-                f"Emitting class '{jsonObj.CppClass()}' (source: '{jsonObj.OrigName()}')")
+            print("Emitting class '{}' (source: '{}')".format(
+                jsonObj.CppClass(), jsonObj.OrigName()))
             emit.Line("class %s : public %s {" % (
                 jsonObj.CppClass(), TypePrefix("Container")))
             emit.Line("public:")
@@ -2177,7 +2180,7 @@ def CreateDocument(schema, path):
         if "events" in interface:
             event_count = len(interface["events"])
         if "include" in interface:
-            for _, iface in interface["include"].iteritems():
+            for _, iface in interface["include"].items():
                 if "methods" in iface:
                     method_count += len(iface["methods"])
                 if "properties" in iface:
@@ -2229,7 +2232,7 @@ def CreateDocument(schema, path):
         MdBr()
 
         def mergedict(d1, d2, prop):
-            return { **(d1[prop] if prop in d1 else dict()), **(d2[prop] if prop in d2 else dict())}
+            return {**(d1[prop] if prop in d1 else dict()), **(d2[prop] if prop in d2 else dict())}
 
         MdHeader("Introduction")
         MdHeader("Scope", 2)
@@ -2365,7 +2368,7 @@ def CreateDocument(schema, path):
                 section, plugin_class))
             InterfaceDump(interface, section, header)
             if "include" in interface:
-                for _, s in interface["include"].iteritems():
+                for _, s in interface["include"].items():
                     if s:
                         if section in s:
                             MdBr()
@@ -2384,11 +2387,11 @@ def CreateDocument(schema, path):
                     skip_list.append(method)
 
             if "include" in interface:
-                for _, s in interface["include"].iteritems():
+                for _, s in interface["include"].items():
                     if s:
                         cl = s["info"]["class"]
                         if section in s:
-                            for method, props in s[section].iteritems():
+                            for method, props in s[section].items():
                                 if props and method not in skip_list:
                                     MethodDump(method, props,
                                                plugin_class, event, prop, cl)
@@ -2472,7 +2475,7 @@ if __name__ == "__main__":
     generateStubs = args.stubs
 
     if args.version:
-        print(f"Version: {VERSION}")
+        print("Version: {}".format(VERSION))
         sys.exit(1)
     elif not args.path or (not generateCode and not generateRpc and not generateStubs and not generateDocs):
         argparser.print_help()
@@ -2517,7 +2520,7 @@ if __name__ == "__main__":
                 trace.Error(str(err))
             except ValueError as err:
                 trace.Error(str(err))
-        print(
-            f"\nJsonGenerator: All done. {trace.errors if trace.errors else 'No'} error{'' if trace.errors == 1 else 's'}.")
+        print("\nJsonGenerator: All done. {} error{}.".format(
+            trace.errors if trace.errors else 'No', '' if trace.errors == 1 else 's'))
         if trace.errors:
             sys.exit(1)
